@@ -100,7 +100,6 @@ class User {
    *
    * Returns [{ username, first_name, last_name, email, is_admin }, ...]
    **/
-
   static async findAll() {
     const result = await db.query(
           `SELECT username,
@@ -122,7 +121,7 @@ class User {
    *
    * Throws NotFoundError if user not found.
    **/
-
+   // UPDATED TO GET USER AND ID OF JOBS APPLIED TO
   static async get(username) {
     const userRes = await db.query(
           `SELECT username,
@@ -134,10 +133,16 @@ class User {
            WHERE username = $1`,
         [username],
     );
-
     const user = userRes.rows[0];
-
     if (!user) throw new NotFoundError(`No user: ${username}`);
+
+    const applicationsRes = await db.query(
+          `SELECT job_id
+           FROM applications
+           WHERE username = $1`,
+        [username],
+    );
+    user.jobs = applicationsRes.rows.map(a => a.job_id);
 
     return user;
   }
@@ -204,7 +209,33 @@ class User {
 
     if (!user) throw new NotFoundError(`No user: ${username}`);
   }
+
+
+  /** JOB APPLICATIONS */
+  static async applyToJob(username, jobId){
+    const userRes = await db.query( // Get user by username and handle not found
+      `SELECT username FROM users WHERE username = $1`, [username]);
+    if(!userRes.rows[0]) throw new NotFoundError(`No user: ${username}`);
+
+    const jobRes = await db.query( // Get job by id and handle not found
+      `SELECT id FROM jobs WHERE id = $1`, [jobId]);
+    if(!jobRes.rows[0]) throw new NotFoundError(`No job: ${jobId}`);
+
+    const existingApplication = await db.query( // Check if user has already applied
+      `SELECT * FROM applications WHERE username = $1 AND job_id = $2`, [username, jobId]);
+    if(existingApplication.rows.length > 0) throw new BadRequestError(`You have already applied to this job`);
+
+    // Insert the application
+    const result = await db.query( 
+      `INSERT INTO applications (username, job_id) VALUES ($1, $2) RETURNING username, job_id`,
+      [username, jobId]
+    );
+
+    return result.rows[0];
+  }
 }
+
+
 
 
 module.exports = User;

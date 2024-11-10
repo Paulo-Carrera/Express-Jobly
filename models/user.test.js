@@ -13,6 +13,7 @@ const {
   commonAfterEach,
   commonAfterAll,
 } = require("./_testCommon");
+const { application } = require("express");
 
 beforeAll(commonBeforeAll);
 beforeEach(commonBeforeEach);
@@ -112,6 +113,13 @@ describe("findAll", function () {
     const users = await User.findAll();
     expect(users).toEqual([
       {
+        username: "adminUser",
+        firstName: "Admin",
+        lastName: "User",
+        email: "admin@email.com",
+        isAdmin: true,
+      },
+      {
         username: "u1",
         firstName: "U1F",
         lastName: "U1L",
@@ -140,6 +148,7 @@ describe("get", function () {
       lastName: "U1L",
       email: "u1@email.com",
       isAdmin: false,
+      jobs : []
     });
   });
 
@@ -150,6 +159,39 @@ describe("get", function () {
     } catch (err) {
       expect(err instanceof NotFoundError).toBeTruthy();
     }
+  });
+});
+
+/************************************** get/username */
+
+describe("get/username", function () {
+  beforeEach(async function () {
+    await db.query("DELETE FROM applications");
+    await db.query("DELETE FROM jobs");
+    await db.query(`
+      INSERT INTO jobs (id, title, salary, equity, company_handle)
+      VALUES (1, 'Job1', 50000, '0.05', 'c1'),
+             (2, 'Job2', 60000, '0.1', 'c2');
+    `);
+  
+    // Insert applications for user 'u1' with the existing job IDs
+    await db.query(`
+      INSERT INTO applications (username, job_id)
+      VALUES ('u1', 1), ('u1', 2);
+    `);
+    });        
+
+  test("works", async function () {
+    let user = await User.get("u1");
+    
+    expect(JSON.stringify(user)).toEqual(JSON.stringify({
+      username: "u1",
+      firstName: "U1F",
+      lastName: "U1L",
+      email: "u1@email.com",
+      isAdmin: false,
+      jobs: [1, 2]
+    }));
   });
 });
 
@@ -228,3 +270,25 @@ describe("remove", function () {
     }
   });
 });
+
+
+/************************************** applyToJob */
+
+describe("applyToJob", function () {
+  beforeEach(async function () {
+    await db.query("DELETE FROM applications");
+    await db.query("DELETE FROM jobs");
+
+    await db.query(`
+      INSERT INTO jobs (id, title, salary, equity, company_handle)
+      VALUES (1, 'Job1', 100, 0.1, 'c1')`);
+  })
+  test("works", async function () {
+    const result = await User.applyToJob("u1", 1);
+    expect(result).toEqual({
+      username: "u1",
+      job_id: 1,
+    });
+  });
+});
+

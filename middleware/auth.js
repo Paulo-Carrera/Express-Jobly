@@ -56,6 +56,8 @@ function ensureAdmin(req, res, next) {
 // ensure is an admin or correct user 
 function adminOrCorrectUser(req, res, next){
   try {
+    console.log("RES.LOCALS.USER: ",res.locals.user);
+    console.log("REQ.PARAMS.USERNAME: ",req.params.username);
     if (!res.locals.user || (res.locals.user.isAdmin === false && res.locals.user.username !== req.params.username)){
       throw new UnauthorizedError();
     }

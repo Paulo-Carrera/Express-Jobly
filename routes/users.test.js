@@ -71,6 +71,54 @@ describe("POST /users", function () {
   });
 });
 
+/************************************** POST /users/:username/jobs/:id */
+// WORKS FOR ADMIN OR CORRECT USER
+describe("POST /users/:username/jobs/:id", () => {
+  beforeEach(async () => {
+    await db.query(`DELETE FROM applications`);
+    await db.query(`DELETE FROM jobs`);
+    await db.query(`DELETE FROM users`);
+
+    await db.query(`
+      INSERT INTO users(username, password, first_name, last_name, email, is_admin)
+      VALUES ('u1', 'password1', 'U1F', 'U1L', 'user1@user.com', true),
+             ('u2', 'password2', 'U2F', 'U2L', 'user2@user.com', false)`);
+    await db.query(`
+      INSERT INTO jobs(id, title, salary, equity, company_handle)
+      VALUES (1, 'Job1', 100, 0.1, 'c1')`);
+  })
+  test("works for correct user", async () => {
+    const resp = await request(app)
+        .post(`/users/u1/jobs/1`)
+        .send()
+        .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.statusCode).toEqual(201);
+  });
+
+  test("unauth for wrong user", async () => {
+    const resp = await request(app)
+        .post(`/users/u1/jobs/1`)
+        .send()
+        .set("authorization", `Bearer ${u2Token}`);
+    expect(resp.statusCode).toEqual(401);
+  });
+
+  test("unauth for anon", async () => {
+    const resp = await request(app)
+        .post(`/users/u1/jobs/1`)
+        .send();
+    expect(resp.statusCode).toEqual(401);
+  });
+
+  test("works for admins", async () => {
+    const resp = await request(app)
+        .post(`/users/u2/jobs/1`)
+        .send()
+        .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.statusCode).toEqual(201);
+  })
+})
+
 /************************************** GET /users */
 // UPDATED TO WORK ONLY FOR ADMINS
 describe("GET /users", function () {

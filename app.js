@@ -50,5 +50,18 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message });
 });
 
+app.use(async (req, res, next) => {
+  const token = req.headers.authorization?.replace(/^[Bb]earer /, "");
+  if (token) {
+    try {
+      const decodedToken = jwt.verify(token, SECRET_KEY); // Use your secret key
+      res.locals.user = await User.get(decodedToken.username); // Attach user data
+    } catch (err) {
+      return next(err);
+    }
+  }
+  next();
+});
+
 
 module.exports = app;
