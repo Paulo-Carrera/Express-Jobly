@@ -44,4 +44,11 @@ app.use(function (err, req, res, next) {
   });
 });
 
+// Error handling middleware (to be added in your app.js or server.js)
+app.use((err, req, res, next) => {
+  console.error("Server error:", err.message);
+  res.status(500).json({ error: err.message });
+});
+
+
 module.exports = app;

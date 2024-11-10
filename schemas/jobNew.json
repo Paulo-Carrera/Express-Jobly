@@ -2,8 +2,8 @@
     "type": "object",
     "properties": {
         "title": { "type": "string" },
-        "salary": { "type": "integer" },
-        "equity": { "type": "number" },
+        "salary": { "type": "number" },
+        "equity": { "type": "number", "minimum": 0, "maximum": 1 },
         "company_handle": { "type": "string" }
     },
     "required": ["title", "company_handle"] 

@@ -54,52 +54,50 @@ class Job {
     }
 
     // Get jobs with optional filters (title, minSalary, hasEquity)
-    static async getFiltered(title = "", minSalary = 0, hasEquity = false) {
-        console.log("Received query parameters:", { title, minSalary, hasEquity });
-    
-        // Ensure minSalary is a number
-        minSalary = parseInt(minSalary, 10);  // Convert to an integer
-    
-        // Log the parsed value to check
-        console.log("Parsed minSalary:", minSalary);
-    
-        let query = `SELECT id, title, salary, equity, company_handle
-                     FROM jobs
-                     WHERE 1=1`;
-    
+    static async getFiltered(title, minSalary, hasEquity) {
+        console.log("Received parameters in getFiltered:", { title, minSalary, hasEquity });
+
+        let query = `
+            SELECT id, title, salary, equity, company_handle
+            FROM jobs
+            WHERE 1=1`; // Base query
+
         const values = [];
         let idx = 1;
-    
+
+        // Title filter
         if (title) {
             query += ` AND title ILIKE $${idx}`;
             values.push(`%${title}%`);
             idx++;
         }
-    
-        // Check if minSalary is a valid number before using it
-        if (minSalary !== undefined && !isNaN(minSalary) && minSalary > 0) {
+
+        // Salary filter
+        if (minSalary !== undefined) {
             query += ` AND salary >= $${idx}`;
             values.push(minSalary);
             idx++;
         }
-    
+
+        // Equity filter
         if (hasEquity) {
             query += ` AND equity > 0`;
         }
-    
+
         query += ` ORDER BY title`;
-    
-        // Execute the query
+
+        console.log("Final SQL Query:", query);
+        console.log("Query Values:", values);
+
         try {
             const result = await db.query(query, values);
             console.log("Query result:", result.rows);
             return result.rows;
         } catch (error) {
-            console.error("Database query error:", error);
-            throw new Error("Error executing query.");
+            console.error("Database query error:", error.message); // Add error log here
+            throw new Error("Error executing filtered jobs query");
         }
-    }
-     
+    }  
 
     // Update job (never change id or companyHandle)
     static async update(id, { title, salary, equity }) {

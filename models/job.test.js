@@ -115,6 +115,12 @@ describe("getFiltered", function () {
             equity: 0.2,
             company_handle: "c2"
         });
+        await Job.create({
+            title : "something else",
+            salary : 50,
+            equity : 0,
+            company_handle : "c3"
+        });
     })
     test("works", async function () {
         const jobs = await Job.getFiltered("Job", 100, true);

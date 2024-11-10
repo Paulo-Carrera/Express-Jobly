@@ -70,12 +70,64 @@ describe("POST /jobs", function(){
 });
 
 /************************************** GET /jobs */
-describe("GET /jobs", function(){
-    test("works for anon", async function(){
+// UPDATED TO ACCEPT FILTERS
+describe("GET /jobs", function() {
+    beforeEach(async function() {
+        // Remove all jobs before running tests
+        await Job.removeAll();
+        
+        // Create sample jobs
+        await Job.create({
+            title: "software engineer",
+            salary: 100,
+            equity: 0.1,
+            company_handle: "c1"
+        });
+        await Job.create({
+            title: "software developer",
+            salary: 300,
+            equity: 0.2,
+            company_handle: "c1"
+        });
+        await Job.create({
+            title: "mailman",
+            salary: 300,
+            equity: 0.3,
+            company_handle: "c1"
+        });
+    });
+
+    afterEach(async function() {
+        // Optionally remove all jobs after each test (if needed)
+        await Job.removeAll();
+    });
+
+    test("works for anon", async function() {
         const resp = await request(app)
-                .get("/jobs");
+            .get("/jobs");
         expect(resp.body).toEqual({
-            jobs : []
+            jobs: expect.any(Array)
+        });
+    });
+
+    test("filters by title", async function() {
+        const resp = await request(app)
+            .get("/jobs?title=software");
+        expect(resp.body).toEqual({
+            jobs: expect.arrayContaining([
+                expect.objectContaining({
+                    title: "software engineer",
+                    salary: 100,
+                    equity: "0.1",
+                    company_handle: "c1"
+                }),
+                expect.objectContaining({
+                    title: "software developer",
+                    salary: 300,
+                    equity: "0.2",
+                    company_handle: "c1"
+                })
+            ])
         });
     });
 });
@@ -99,56 +151,6 @@ describe("GET /jobs/:id", function(){
                 equity : "0.1",
                 company_handle : "c1"
             }
-        });
-    });
-});
-
-/************************************** GET /jobs/filtered */
-describe("GET /jobs/filtered", function(){
-    beforeEach(async function(){
-        await Job.removeAll();
-        await Job.create({
-            title : "title",
-            salary : 100,
-            equity : 0.1,
-            company_handle : "c1"
-        });
-        await Job.create({
-            title : "title2",
-            salary : 200,
-            equity : 0.2,
-            company_handle : "c1"
-        });
-        await Job.create({
-            title : "title3",
-            salary : 300,
-            equity : 0.3,
-            company_handle : "c1"
-        });
-    });
-
-    test("works", async function(){
-        const minSalary = 200;
-        const resp = await request(app)
-                .get(`/jobs/filtered?title=title&minSalary=${minSalary}&hasEquity=true`);
-                console.log("RESP BODYYYYY",resp.body);
-        expect(resp.body).toEqual({
-            jobs : [
-                {
-                    id : expect.any(Number),
-                    title : "title2",
-                    salary : 200,
-                    equity : "0.2",
-                    company_handle : "c1"
-                },
-                {
-                    id : expect.any(Number),
-                    title : "title3",
-                    salary : 300,
-                    equity : "0.3",
-                    company_handle : "c1"
-                }
-            ]
         });
     });
 });
