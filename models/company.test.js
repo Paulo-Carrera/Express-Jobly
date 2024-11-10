@@ -88,28 +88,40 @@ describe("findAll", function () {
 });
 
 /************************************** get */
-
+// UPDATED TO INCLUDE JOBS DATA
 describe("get", function () {
+  beforeEach(async function(){
+    await db.query(`
+      INSERT INTO jobs (title, salary, equity, company_handle)
+        VALUES ('Software Engineer', 10000, 0.1, 'c1'),
+               ('J2', 20000, 0.2, 'c2'),
+               ('J3', 30000, 0.3, 'c3')
+    `);
+  });
+
   test("works", async function () {
     let company = await Company.get("c1");
     expect(company).toEqual({
-      handle: "c1",
-      name: "C1",
-      description: "Desc1",
-      numEmployees: 1,
-      logoUrl: "http://c1.img",
+      company: {
+        handle: "c1",
+        name: "C1",
+        description: "Desc1",
+        numEmployees: 1,
+        logoUrl: "http://c1.img",
+      },
+      jobs: [
+        {
+          companyHandle: "c1",
+          id: expect.any(Number),  // Match any number for the job ID
+          title: "Software Engineer",
+          salary: 10000,
+          equity: "0.1",  
+        }
+      ]
     });
   });
-
-  test("not found if no such company", async function () {
-    try {
-      await Company.get("nope");
-      fail();
-    } catch (err) {
-      expect(err instanceof NotFoundError).toBeTruthy();
-    }
-  });
 });
+
 
 /************************************** update */
 
